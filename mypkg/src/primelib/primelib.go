@@ -1,4 +1,4 @@
-package prime
+package primelib
 
 import "math"
 import "os"

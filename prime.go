@@ -4,7 +4,7 @@ import "os"
 import "fmt"
 import "flag"
 
-import "prime"
+import "primelib"
 
 var generate = flag.Uint("gen", 0, "generates first 'n' primes")
 var test = flag.Bool("test", false, "tests the given number/s (in <STDIN>) for primality")
@@ -15,14 +15,14 @@ func main() {
 	flag.Parse()
 
 	if inputFile != nil && len(*inputFile) > 0 {
-		cnt, err := prime.LoadPrimes(*generate, *inputFile)
+		cnt, err := primelib.LoadPrimes(*generate, *inputFile)
 		if cnt < *generate {
 			fmt.Fprint(os.Stderr, "WARNING: error encountered after ")
 			fmt.Fprintln(os.Stderr, "loading", cnt, "prime/s -", err)
 		}
 	}
-	prime.GeneratePrimes(*generate)
-	if prime.GetPrimeCount() == 0 {
+	primelib.GeneratePrimes(*generate)
+	if primelib.GetPrimeCount() == 0 {
 		fmt.Fprintln(os.Stderr, "ERROR: No primes generated")
 		return
 	}
@@ -35,7 +35,7 @@ func main() {
 	}
 
 	var number uint64
-	maxPrime := prime.GetMaxPrime()
+	maxPrime := primelib.GetMaxPrime()
 	threshold := maxPrime * maxPrime
 	for getNumber(&number) {
 		fmt.Print(number, ": ")
@@ -46,7 +46,7 @@ func main() {
 			continue
 		}
 
-		primeFactor := prime.GetFirstPrimeFactor(number)
+		primeFactor := primelib.GetFirstPrimeFactor(number)
 		if primeFactor == number {
 			fmt.Println("prime")
 		} else {
@@ -55,7 +55,7 @@ func main() {
 
 			for ; number != primeFactor; lastPrimeFactor = primeFactor {
 				number /= primeFactor
-				primeFactor = prime.GetFirstPrimeFactor(number)
+				primeFactor = primelib.GetFirstPrimeFactor(number)
 				if primeFactor != lastPrimeFactor {
 					fmt.Print(", ", primeFactor)
 				}
@@ -73,7 +73,7 @@ func getNumber(number *uint64) bool {
 
 func printPrimes() {
 	var i uint
-	for p := prime.GetPrime(i); p != 0; p = prime.GetPrime(i) {
+	for p := primelib.GetPrime(i); p != 0; p = primelib.GetPrime(i) {
 		fmt.Println(p)
 		i++
 	}
