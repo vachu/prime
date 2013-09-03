@@ -1,0 +1,22 @@
+Use Cases for the nextgen Primelib
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The User should be able to check for primality of a given positive
+number upto MaxValue of UInt64
+
+The User should be able to list first 'n' primes where 'n' > 0
+
+The User should be able to list out all primes between numbers 'm' and
+'n', where ('m', 'n') >= 0 && 'm' < 'n'
+
+NFRs
+~~~~
+The Primelib module needs a Core Set of first 'n' primes to check for
+primality of numbers upto 'n' ^ 2.
+
+The generation of this Core Set should be 'on demand'.  Say there are
+no primes in the Core Set and the user had requested for primality
+check of 101.  Then this lib requires prime atleast upto 10.  Hence,
+the generation of primes upto 10 for the core set shoulld happen for
+the first time alone.  Next time, if a check is requested for the
+number 401, then primes > 10 && <= 20 alone should be generated once
