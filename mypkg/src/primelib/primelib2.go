@@ -2,19 +2,21 @@ package primelib
 
 import "errors"
 
+const primeInterval = 1000
+const maxPrimeLimit = 1000 * 1000 // All primes <= 1 million
+
+// The main Prime Repository.  The members are private and are
+// accessible only through the associated methods
 type Repo struct {
-	primes     map[uint32][]uint64
+	primes     map[uint64][]uint64
 	primeCount uint32
 	maxPrime   uint64
 }
 
-var primeRepo Repo
-
-const PRIME_INTERVAL = 1000
-const MAX_PRIME_LIMIT = 1000 * 1000 * 1000 // All primes <= 1 billion
+var PrimeRepo Repo
 
 func init() {
-	primeRepo.primes = make(map[uint32][]uint64)
+	PrimeRepo.primes = make(map[uint64][]uint64)
 }
 
 // Generates first 'n' primes where 'n' <= 'limit' and stores them
@@ -31,7 +33,7 @@ func (r *Repo) GeneratePrimesUpto(limit uint64) (cnt uint32) {
 	case limit <= 1 || r.maxPrime >= limit:
 		cnt = 0
 	default:
-		primes, _ := GeneratePrimesBetween(r.maxPrime+1, limit)
+		primes, _ := GeneratePrimesBetween(r.maxPrime+2, limit)
 		cnt = uint32(len(primes))
 	}
 
@@ -44,6 +46,36 @@ func GeneratePrimesBetween(lo, hi uint64) (primes []uint64, err error) {
 		err = errors.New("lo >= hi")
 		return
 	}
+
+	return
+}
+
+func (r *Repo) storePrimes(primes []uint64) {
+	primesLen := len(primes)
+	if primesLen == 0 {
+		return
+	}
+
+	var sliceStart uint32
+	quotient := primes[0] / primeInterval
+	for i := 0; i < primesLen; i++ {
+		if q := primes[i] / primeInterval; q > quotient {
+			if _, ok := r.primes[quotient]; !ok {
+				r.primes[quotient] = make([]uint64, 0, primeInterval)
+			}
+			r.storePrimeSlice(primes[sliceStart:i], r.primes[quotient])
+			quotient = q
+			sliceStart = uint32(i)
+		}
+	}
+
+	if _, ok := r.primes[quotient]; !ok {
+		r.primes[quotient] = make([]uint64, 0, primeInterval)
+	}
+	r.storePrimeSlice(primes[sliceStart:primesLen], r.primes[quotient])
+}
+
+func (r *Repo) storePrimeSlice(src, dst []uint64) (cnt uint32) {
 
 	return
 }
