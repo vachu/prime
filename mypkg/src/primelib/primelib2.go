@@ -40,7 +40,8 @@ func (r *Repo) GeneratePrimesUpto(limit uint64) (cnt uint32) {
 	return
 }
 
-// Generates primes between the numbers 'lo' and 'hi' where 'lo' < 'hi'
+// Generates primes between the numbers 'lo' and 'hi' where 'lo' < 'hi'.
+// if 'p' is the prime generated then 'p' >= 'lo' && <= 'hi'
 func GeneratePrimesBetween(lo, hi uint64) (primes []uint64, err error) {
 	if lo >= hi {
 		err = errors.New("lo >= hi")
@@ -63,7 +64,7 @@ func (r *Repo) storePrimes(primes []uint64) {
 			if _, ok := r.primes[quotient]; !ok {
 				r.primes[quotient] = make([]uint64, 0, primeInterval)
 			}
-			r.storePrimeSlice(primes[sliceStart:i], r.primes[quotient])
+			r.storePrimeSlice(quotient, primes[sliceStart:i])
 			quotient = q
 			sliceStart = uint32(i)
 		}
@@ -72,10 +73,29 @@ func (r *Repo) storePrimes(primes []uint64) {
 	if _, ok := r.primes[quotient]; !ok {
 		r.primes[quotient] = make([]uint64, 0, primeInterval)
 	}
-	r.storePrimeSlice(primes[sliceStart:primesLen], r.primes[quotient])
+	r.storePrimeSlice(quotient, primes[sliceStart:])
 }
 
-func (r *Repo) storePrimeSlice(src, dst []uint64) (cnt uint32) {
+func (r *Repo) storePrimeSlice(quo uint64, src []uint64) (cnt uint32) {
+	if len(src) == 0 {
+		return
+	}
+
+	if len(r.primes[quo]) == 0 {
+		r.primes[quo] = r.primes[quo][:len(src)]
+		cnt = uint32(copy(r.primes[quo], src))
+	} else {
+		p := r.primes[quo][len(r.primes[quo]) - 1]
+		var i int
+		for ; i < len(src); i++ {
+			if src[i] > p {
+				size := len(r.primes[quo]) + len(src) - i
+				r.primes[quo] = r.primes[quo][:size]
+				cnt = uint32(copy(r.primes[quo], src[i:]))
+				break
+			}
+		}
+	}
 
 	return
 }
