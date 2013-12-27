@@ -30,6 +30,9 @@ func main() {
 	if !(*test) {
 		if !(*noPrint) {
 			printPrimes()
+		} else {
+			largestPrime := primelib.GetMaxPrime()
+			fmt.Println("Largest prime generated: ", largestPrime)
 		}
 		return
 	}
