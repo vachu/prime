@@ -1,12 +1,14 @@
+123456789|123456789|123456789|123456789|123456789|123456789|123456789|123456789|
+
 Use Cases for the nextgen Primelib
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The User should be able to check for primality of a given positive
-number upto MaxValue of UInt64
+- The User should be able to check for primality of a given positive umber upto
+MaxValue of UInt32
 
-The User should be able to list first 'n' primes where 'n' > 0
+- The User should be able to list first 'n' primes where 'n' > 0
 
-The User should be able to list out all primes between numbers 'm' and
+- The User should be able to list out all primes between numbers 'm' and
 'n', where ('m', 'n') >= 0 && 'm' < 'n'
 
 NFRs

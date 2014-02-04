@@ -15,10 +15,27 @@ console-based UI with which we could:<br/>
 	</ol>
 The whole program is implemented as a regular Unix filter.
 
-Future Plans
-~~~~~~~~~~~~
-The Primelib package / library will be converted to a suitable Service.
-I am planning to use WebSockets instead of the current WebService 
-mechanisms.
+Motivation
+~~~~~~~~~~
+I want to learn Golang and I have a student's fascination for Prime Numbers.
+I also want to learn how to create a simple ReST-ful WebService and the new
+WebSockets technology.  Hence I devised the project solely for my own learning
+purposes.  In the process, I also want get a good grip on git.
+
+The "distant" future plan is to come up with a HTML5 client that consumes the
+WebService as well as the WebSocket server
+
+Enhancement Plans
+~~~~~~~~~~~~~~~~~
+The PrimeLib would be served by:
+<ol>
+	<li>a simple ReST WebService</li>
+	<li>a WebSocket server</li>
+</ol>
+
+Since there is no concept of shared library / DLL in go (as of 04-Feb-2014),
+the immediate future plan is to wrap such librarires into a WebSocket server
+so that other apps could "reuse" them at runtime.  In that light, the currently
+planned ReST WebService would also "reuse" the WebSocket-served library
 
 -x-x-x-
