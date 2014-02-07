@@ -1,8 +1,12 @@
 package main
 
-import "primelib"
-import "os"
+import ("os"; "fmt"; "primelib")
 
 func main() {
-	primelib.WritePrimes(os.Stdout, 20, " ****\n");
+	const req_cnt = 20000
+
+	cnt := primelib.WritePrimes(os.Stdout, req_cnt, "\n");
+	if cnt != req_cnt {
+		fmt.Fprintf(os.Stderr, "WARNING: got only %d primes\n", cnt)
+	}
 }
