@@ -1,9 +1,13 @@
 package primelib
 
-import ("fmt"; "math"; "io";)
+import (
+	"fmt"
+	"io"
+	"math"
+)
 
-const maxPrimeCount = 6542 // no. of primes <= 2 ^ 16 - 1
-var arrPrimes [maxPrimeCount]uint16
+const MaxPrimeCount = 6542 // total no. of unsigned 16-bit primes
+var arrPrimes [MaxPrimeCount]uint16
 
 func init() {
 	arrPrimes[0] = 2
@@ -18,32 +22,48 @@ func init() {
 }
 
 func isPrime(number uint32) bool {
-	isComposite := false;
+	isComposite := false
 	stopLimit := uint16(math.Trunc(math.Sqrt(float64(number))))
 	for i := 0; !isComposite && arrPrimes[i] <= stopLimit; i++ {
-		isComposite = (number % uint32(arrPrimes[i]) == 0)
+		isComposite = (number%uint32(arrPrimes[i]) == 0)
 	}
-	return !isComposite;
+	return !isComposite
 }
 
 func WritePrimes(w io.Writer, cnt uint32, sep string) uint32 {
-	for i := uint32(0); i < cnt && i < maxPrimeCount; i++ {
+	for i := uint32(0); i < cnt && i < MaxPrimeCount; i++ {
 		fmt.Fprintf(w, "%d%s", arrPrimes[i], sep)
 	}
 
-	number := uint32(arrPrimes[maxPrimeCount - 1]) + 2
-	for i := uint32(maxPrimeCount); i < cnt; number += 2 {
+	number := uint32(arrPrimes[MaxPrimeCount-1]) + 2
+	for i := uint32(MaxPrimeCount); i < cnt; number += 2 {
 		if isPrime(number) {
 			fmt.Fprintf(w, "%d%s", number, sep)
 			i++
 		}
 	}
-	
+
 	return cnt
 }
 
-func WritePrimesBetween(w io.Writer, from, to uint, sep string) uint {
-	return 0
+func WritePrimesBetween(w io.Writer, from, to uint32, sep string) (cnt uint32) {
+	cnt = 0
+	if to == 0 || from > to {
+		return
+	}
+
+	number := from
+	if number%2 == 0 {
+		number++
+	}
+
+	for ; number >= from && number <= to; number += 2 {
+		if isPrime(number) {
+			fmt.Fprintf(w, "%d%s", number, sep)
+		}
+	}
+
+	return
 }
 
 func GetFirstPrimeFactor(number uint64) uint64 {
@@ -52,8 +72,8 @@ func GetFirstPrimeFactor(number uint64) uint64 {
 	}
 
 	stopLimit := uint16(math.Trunc(math.Sqrt(float64(number))))
-	for i := 0; i < maxPrimeCount && arrPrimes[i] <= stopLimit; i++ {
-		if number % uint64(arrPrimes[i]) == 0 {
+	for i := 0; i < MaxPrimeCount && arrPrimes[i] <= stopLimit; i++ {
+		if number%uint64(arrPrimes[i]) == 0 {
 			return uint64(arrPrimes[i])
 		}
 	}

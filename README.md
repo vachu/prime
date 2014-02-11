@@ -1,5 +1,4 @@
 # prime
-
 My first, major program in Google's Go Programming Language!
 
 Right now (as of 31-Aug-2013 IST), this program provides for a simple
@@ -25,7 +24,6 @@ The "distant" future plan is to come up with a HTML5 client that consumes the
 WebService as well as the WebSocket server
 
 ## Enhancement Plans
-
 The PrimeLib would be served by:
 <ol>
 	<li>a simple ReST WebService</li>
@@ -36,5 +34,8 @@ Since there is no concept of shared library / DLL in go (as of 04-Feb-2014),
 the immediate future plan is to wrap such librarires into a WebSocket server
 so that other apps could "reuse" them at runtime.  In that light, the currently
 planned ReST WebService would also "reuse" the WebSocket-served library
+
+## More (Gory) Details
+
 
 :-x-x-x-:
