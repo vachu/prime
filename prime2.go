@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 )
+
 import "primelib"
 
 const printFlagUsage = `{n | x:y}
@@ -16,42 +17,39 @@ const testFlagUsage = `
     Tests the given number/s (in <STDIN>) for primality
 `
 
-var print = flag.String("print", "6542", printFlagUsage)
+var print = flag.String("print", "", printFlagUsage)
 var test = flag.Bool("test", false, testFlagUsage)
 
 func main() {
 	flag.Parse()
-
 	if len(*print) > 0 {
 		printPrime()
 	}
-	if !(*test) {
-		return
+	if *test {
+		fmt.Fprintf(os.Stderr, "INFO: input number for Primality Test; ")
+		fmt.Fprintf(os.Stderr, "<Ctrl-D> to quit...\n")
+		testPrime()
 	}
-
-	fmt.Fprintf(os.Stderr, "INFO: input number for Primality Test; ")
-	fmt.Fprintf(os.Stderr, "<Ctrl-D> to quit...\n")
-	testPrime()
 }
 
 func printPrime() {
 	cnt, from, to := parsePrintFlag(*print)
-	fmt.Fprintf(os.Stderr, "DEBUG: cnt = %d, from = %d, to = %d\n", cnt, from, to)
+	ch := make(chan uint32, 1000)
 	switch {
-	case cnt > 0:
-		fmt.Fprintf(os.Stderr, "INFO: Printing %d primes...\n", cnt)
-		ctr := primelib.WritePrimes(os.Stdout, cnt, "\n")
-		if ctr < uint32(cnt) {
-			fmt.Fprintf(os.Stderr, "WARNING: printed %d primes\n", ctr)
+	case from <= to && to > 0:
+		go primelib.ListPrimesBetween(ch, from, to)
+		for p := range ch {
+			fmt.Println(p)
 		}
 
-	case from < to:
-		fmt.Fprintf(os.Stderr, "INFO: Printing primes between %d and %d...\n", from, to)
-		ctr := primelib.WritePrimesBetween(os.Stdout, from, to, "\n")
-		fmt.Fprintf(os.Stderr, "INFO: printed %d primes\n", ctr)
+	case cnt > 0:
+		go primelib.ListPrimes(ch, cnt)
+		for p := range ch {
+			fmt.Println(p)
+		}
 
 	default:
-		fmt.Fprintf(os.Stderr, "Invalid 'print' flag value(s)")
+		fmt.Fprintf(os.Stderr, "ERROR: Invalid 'print' flag value(s)\n")
 	}
 }
 
@@ -60,15 +58,14 @@ func parsePrintFlag(flagValue string) (cnt, from, to uint32) {
 	from = 0
 	to = 0
 	r1 := regexp.MustCompile(`^\d+$`)
-	r2 := regexp.MustCompile(`^\d+:\d+$`)
+	r2 := regexp.MustCompile(`^\d+:\d+`)
 	r3 := regexp.MustCompile(`:`)
 	if r1.MatchString(flagValue) {
 		c, err := strconv.ParseUint(flagValue, 0, 32)
 		if err == nil {
 			cnt = uint32(c)
 		}
-	}
-	if r2.MatchString(flagValue) {
+	} else if r2.MatchString(flagValue) {
 		rangeNums := r3.Split(flagValue, -1)
 		f, e1 := strconv.ParseUint(rangeNums[0], 0, 32)
 		t, e2 := strconv.ParseUint(rangeNums[1], 0, 32)
@@ -78,7 +75,6 @@ func parsePrintFlag(flagValue string) (cnt, from, to uint32) {
 		if e2 == nil {
 			to = uint32(t)
 		}
-		fmt.Fprintf(os.Stderr, "DEBUG: from = %d, to = %d\n", from, to)
 	}
 	return
 }
