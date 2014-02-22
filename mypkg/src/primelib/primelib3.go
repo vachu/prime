@@ -27,18 +27,16 @@ func isPrime(number uint32) bool {
 }
 
 func ListPrimes(out chan uint32, cnt uint32) {
+	number := arrPrimes[MaxPrimeCount-1] + 2
 	for i := uint32(0); i < cnt && i < MaxPrimeCount; i++ {
 		out <- arrPrimes[i]
 	}
-
-	number := arrPrimes[MaxPrimeCount-1] + 2
-	for i := uint32(MaxPrimeCount); i < cnt && number <= math.MaxUint32; number += 2 {
+	for i := uint32(MaxPrimeCount); i < cnt && number < math.MaxUint32; number += 2 {
 		if isPrime(number) {
 			out <- number
 			i++
 		}
 	}
-
 	close(out)
 }
 
