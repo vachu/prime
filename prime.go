@@ -4,7 +4,7 @@ import "os"
 import "fmt"
 import "flag"
 
-import "primelib"
+import "primelib/v1"
 
 var generate = flag.Uint("gen", 0, "generates first 'n' primes")
 var test = flag.Bool("test", false, "tests the given number/s (in <STDIN>) for primality")

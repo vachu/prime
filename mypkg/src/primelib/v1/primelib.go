@@ -1,6 +1,6 @@
 package primelib
 
-//import "math"
+import "math"
 import "os"
 import "fmt"
 
@@ -76,7 +76,7 @@ func GetPrime(index uint) uint64 {
 	return primes[quotient][remainder]
 }
 
-/*
+
 func GetFirstPrimeFactor(number uint64) uint64 {
 	if primeCount == 0 {
 		panic("No primes generated")
@@ -93,7 +93,7 @@ func GetFirstPrimeFactor(number uint64) uint64 {
 	}
 	return number
 }
-*/
+
 
 func IsPrime(candidate uint64) bool {
 	return GetFirstPrimeFactor(candidate) == candidate

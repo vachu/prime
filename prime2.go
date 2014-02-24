@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-import "primelib"
+import "primelib/v3"
 
 const printFlagUsage = `{n | x:y}
     Prints first 'n' primes or all primes between 'x' and 'y' where 'x' <= 'y'
