@@ -12,7 +12,7 @@ console-based UI with which we could:<br/>
 	<li>test a given number via STDIN for primality</li>
 	</ol>
 
-	The whole program is implemented as a regular Unix filter.
+The whole program (both 'prime.go' and 'prime2.go') is implemented as a regular Unix filter.
 
 ## Motivation
 I want to learn Golang and I have a student's fascination for Prime Numbers.
@@ -29,11 +29,13 @@ The source has been restructured.  The old and now almost defunct 'prime.go' use
 ### Primelib/v3
 This package is greatly simplified from v1.  It uses an internal array of a million primes (generated @ startup/init) to print primes and test input numbers for primality
 
+This package is now served through a simple Websocket server program 'prime_wss.go' that uses the 3rd-party package 'code.google.com/p/go.net/websocket'.  'prime_wsc.go' is the Websocket client program that connects to the above Websocket Server program.
+
 ## Enhancement Plans
 The PrimeLib would be served by:
 <ol>
 	<li>a simple ReST WebService</li>
-	<li>a WebSocket server</li>
+	<li>a WebSocket server (Update: a basic version is now in place)</li>
 </ol>
 
 Since there is no concept of shared library / DLL in go (as of 04-Feb-2014),

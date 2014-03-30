@@ -10,6 +10,10 @@ import (
 
 import "primelib/v3"
 
+const countFlagUsage = `x:y
+	Prints the count of all primes between 'x' and 'y' where 'x' <= 'y'
+`
+
 const printFlagUsage = `{n | x:y}
     Prints first 'n' primes or all primes between 'x' and 'y' where 'x' <= 'y'
 `
@@ -17,18 +21,38 @@ const testFlagUsage = `
     Tests the given number/s (in <STDIN>) for primality
 `
 
+var count = flag.String("count", "", countFlagUsage)
 var print = flag.String("print", "", printFlagUsage)
 var test = flag.Bool("test", false, testFlagUsage)
 
 func main() {
 	flag.Parse()
-	if len(*print) > 0 {
+	if len(*count) > 0 {
+		countPrime()
+	} else if len(*print) > 0 {
 		printPrime()
 	}
 	if *test {
 		fmt.Fprintf(os.Stderr, "INFO: input number for Primality Test; ")
 		fmt.Fprintf(os.Stderr, "<Ctrl-D> to quit...\n")
 		testPrime()
+	}
+}
+
+func countPrime() {
+	_, from, to := parsePrintFlag(*count)
+	ch := make(chan uint32, 1000)
+	switch {
+	case from <= to && to > 0:
+		go primelib.ListPrimesBetween(ch, from, to)
+		cnt := uint32(0)
+		for _ = range ch {
+			cnt++
+		}
+		fmt.Println("\n", cnt)
+
+	default:
+		fmt.Fprintf(os.Stderr, "ERROR: Invalid 'print' flag value(s)\n")
 	}
 }
 

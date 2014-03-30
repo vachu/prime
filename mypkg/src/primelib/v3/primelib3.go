@@ -36,7 +36,7 @@ func isPrime(number uint32) bool {
 
 // List first 'cnt' 32-bit primes onto the supplied output channel 'out'
 //
-// NOTE/WARNING: Always call this method concurrently egs. 'go ListPrimes(...)'
+// NOTE/WARNING: Always call this method concurrently like 'go ListPrimes(...)'
 func ListPrimes(out chan uint32, cnt uint32) {
 	number := arrPrimes[maxPrimeCount-1] + 2
 	for i := uint32(0); i < cnt && i < maxPrimeCount; i++ {
@@ -54,7 +54,7 @@ func ListPrimes(out chan uint32, cnt uint32) {
 // List all 32-bit primes between >= 'from' AND <= 'to' onto the
 // supplied output channel 'out'
 //
-// NOTE/WARNING: Always call this method concurrently egs. 'go ListPrimesBetween(...)'
+// NOTE/WARNING: Always call this method concurrently like 'go ListPrimesBetween(...)'
 func ListPrimesBetween(out chan uint32, from, to uint32) {
 	if to > 0 && from <= to {
 		number := from
