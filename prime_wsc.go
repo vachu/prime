@@ -3,18 +3,23 @@ package main
 import (
 	"bufio"
 	"code.google.com/p/go.net/websocket"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
 )
 
+var wsUrl = flag.String("wsurl", "ws://localhost:7573", "the websocket Url")
+
 func main() {
-	wssUrl := "ws://localhost:7573"
-	ws, err := websocket.Dial(wssUrl, "", "http://localhost")
+	flag.Parse()
+	fmt.Fprintln(os.Stderr, "INFO: Connecting to WebSocket Server @", wsUrl, "...")
+	ws, err := websocket.Dial(*wsUrl, "", "http://localhost")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: connecting to %s - %s\n", wssUrl, err)
+		fmt.Fprintf(os.Stderr, "ERROR: connecting to %s - %s\n", wsUrl, err)
 		return
 	}
+	fmt.Fprintln(os.Stderr, "INFO: Connected\n")
 
 	for msg := "?"; msg != "EXIT" && msg != "QUIT" && msg != "CLOSE"; msg = getLine() {
 		//fmt.Println("DEBUG: msg =", msg)
