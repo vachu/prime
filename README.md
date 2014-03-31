@@ -12,7 +12,23 @@ console-based UI with which we could:<br/>
 	<li>test a given number via STDIN for primality</li>
 	</ol>
 
-The whole program (both 'prime.go' and 'prime2.go') is implemented as a regular Unix filter.
+The programs 'prime.go' and 'prime2.go' are implemented as a regular Unix filter.
+'prime_wss.go' is a simple Websocket Server app that serves the 'primelib/v3'
+package.  It takes simple text-based commands like 'LIST' and 'TEST' to provide
+for the following functionlities:
+	<ol>
+		<li>List the available commands to the Websocket client</li>
+		<li>List the first 'n' primes where 'n' >=0 && < MAX_INT32</li>
+		<li>List all the primes between 'm' and 'n' where 'm' <= 'n' &&
+		('m', 'n') >= 0 && < MAX_INT32</li>
+		<li>Test the given number(s) from primality; the result of
+		each check is output to the Websocket Client</li>
+	</ol>
+
+The commands could be given to the running Websocket Server App through the
+interactive (websocket) Client App 'prime_wsc.go'
+
+All the programs in this project are console-based apps.
 
 ## Motivation
 I want to learn Golang and I have a student's fascination for Prime Numbers.
@@ -39,8 +55,8 @@ The PrimeLib would be served by:
 </ol>
 
 Since there is no concept of shared library / DLL in go (as of 04-Feb-2014),
-the immediate future plan is to wrap such librarires into a WebSocket server
-so that other apps could "reuse" them at runtime.  In that light, the currently
-planned ReST WebService would also "reuse" the WebSocket-served library
+the 'primelib/v3' package is wrapped into a WebSocket server so that other apps
+could "reuse" them at runtime.  In that light, the currently planned 
+ReST WebService would also "reuse" the WebSocket-served library
 
 :-x-x-x-:
