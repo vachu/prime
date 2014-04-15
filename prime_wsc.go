@@ -22,7 +22,6 @@ func main() {
 	fmt.Fprintln(os.Stderr, "INFO: Connected\n")
 
 	for msg := "?"; msg != "EXIT" && msg != "QUIT" && msg != "CLOSE"; msg = getLine() {
-		//fmt.Println("DEBUG: msg =", msg)
 		err = websocket.Message.Send(ws, msg)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "ERROR: could not send Websocket request - ", err)
@@ -32,6 +31,7 @@ func main() {
 		err = websocket.Message.Receive(ws, &msg)
 		msg = strings.Trim(msg, " \t\v\f\r\n")
 		for err == nil && msg != "==== EOT ====" {
+			fmt.Fprintln(os.Stderr, "DEBUG: recvd", len(msg), "bytes")
 			fmt.Println(msg)
 
 			err = websocket.Message.Receive(ws, &msg)
