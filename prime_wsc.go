@@ -13,7 +13,7 @@ var wsUrl = flag.String("wsurl", "ws://localhost:7573", "the websocket Url")
 
 func main() {
 	flag.Parse()
-	fmt.Fprintln(os.Stderr, "INFO: Connecting to WebSocket Server @", wsUrl, "...")
+	fmt.Fprintln(os.Stderr, "INFO: Connecting to WebSocket Server @", *wsUrl, "...")
 	ws, err := websocket.Dial(*wsUrl, "", "http://localhost")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: connecting to %s - %s\n", wsUrl, err)
@@ -31,7 +31,6 @@ func main() {
 		err = websocket.Message.Receive(ws, &msg)
 		msg = strings.Trim(msg, " \t\v\f\r\n")
 		for err == nil && msg != "==== EOT ====" {
-			fmt.Fprintln(os.Stderr, "DEBUG: recvd", len(msg), "bytes")
 			fmt.Println(msg)
 
 			err = websocket.Message.Receive(ws, &msg)

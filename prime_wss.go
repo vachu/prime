@@ -1,9 +1,10 @@
 package main
 
 import (
-	"code.google.com/p/go.net/websocket"
 	"flag"
 	"fmt"
+	"github.com/gorilla/websocket"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -17,14 +18,13 @@ func main() {
 	flag.Parse()
 	url := fmt.Sprintf(":%d", *portNum)
 	if *portNum > math.MaxUint16 {
-		fmt.Fprintln(os.Stderr, "ERROR: Illegal port number -", *portNum)
-		os.Exit(1)
+		log.Fatalln("FATAL: Illegal port number -", *portNum)
 	}
 
-	fmt.Fprintln(os.Stderr, "INFO: Starting the Prime WebSocket Server listening at port", *portNum, "...")
-	http.Handle("/", websocket.Handler(primeRequest))
+	log.Println("INFO: Starting the Prime WebSocket Server listening at port", *portNum, "...")
+	http.HandleFunc("/", primeRequest)
 	if err := http.ListenAndServe(url, nil); err != nil {
-		fmt.Fprintln(os.Stderr, "FATAL ERROR:", err.Error())
+		log.Fatalln("FATAL:", err.Error())
 	}
 }
 
@@ -42,25 +42,37 @@ CLOSE | EXIT | QUIT: quits program
 const eotMsg = "==== EOT ===="
 const warnArgCount = "WARNING: Invalid number of args"
 const errorUnknownCmd = "ERROR: Unknown request / command"
+const MB = 1024 * 1024
 
-func primeRequest(ws *websocket.Conn) {
-	var req string
-	var err error
-	err = websocket.Message.Receive(ws, &req)
-	for ; err == nil; err = websocket.Message.Receive(ws, &req) {
+func primeRequest(w http.ResponseWriter, r *http.Request) {
+	ws, err := websocket.Upgrade(w, r, nil, 1*MB, 1*MB)
+	if _, ok := err.(websocket.HandshakeError); ok {
+		http.Error(w, "Not a websocket handshake", 400)
+	} else if err != nil {
+		log.Println("ERROR: Websocket Handshake -", err)
+		return
+	}
+	primeRequestMainLoop(ws)
+	ws.Close()
+}
+
+func primeRequestMainLoop(ws *websocket.Conn) {
+	msgType, msg, err := ws.ReadMessage()
+	for ; err == nil && msgType == websocket.TextMessage; msgType, msg, err = ws.ReadMessage() {
+		req := string(msg)
 		fields := strings.Fields(req)
 		if len(fields) == 0 {
-			err = websocket.Message.Send(ws, warnArgCount)
+			err = ws.WriteMessage(websocket.TextMessage, []byte(warnArgCount))
 		} else {
 			method := strings.ToUpper(fields[0])
 			switch method {
 			case "?":
-				err = websocket.Message.Send(ws, helpMsg)
+				err = ws.WriteMessage(msgType, []byte(helpMsg))
 			case "TEST":
 				if len(fields) > 1 {
 					err = OnTest(ws, fields[1:])
 				} else {
-					err = websocket.Message.Send(ws, "ERROR: nothing to test")
+					err = ws.WriteMessage(msgType, []byte("ERROR: nothing to test"))
 				}
 			case "LIST":
 				err = OnList(ws, fields[1:])
@@ -72,35 +84,36 @@ func primeRequest(ws *websocket.Conn) {
 				fmt.Fprintln(os.Stderr, "INFO: Closing Websocket...")
 				break
 			default:
-				err = websocket.Message.Send(ws, errorUnknownCmd)
+				err = ws.WriteMessage(msgType, []byte(errorUnknownCmd))
 			}
 		}
-		err = websocket.Message.Send(ws, eotMsg)
+		err = ws.WriteMessage(websocket.TextMessage, []byte(eotMsg))
 	}
-	ws.Close()
 }
 
 func OnTest(ws *websocket.Conn, fields []string) (err error) {
+	bws := &BufferedWebSocket{bufSize: 1024 * 1024, ws: ws} // 1MB buffer
 	for _, numStr := range fields {
 		var num uint64
+		var result string
 		_, errFmt := fmt.Sscanf(numStr, "%d", &num)
 		if errFmt == nil {
-			result := fmt.Sprintf("%d: ", num)
+			result = fmt.Sprintf("%d: ", num)
 			primeFactor := primelib.GetFirstPrimeFactor(num)
 			if primeFactor == num {
-				result += "PRIME"
+				result += "PRIME\n"
 			} else {
-				result += fmt.Sprintf("divisible by %d", primeFactor)
+				result += fmt.Sprintf("divisible by %d\n", primeFactor)
 			}
-			err = websocket.Message.Send(ws, result)
 		} else {
-			err = websocket.Message.Send(ws, fmt.Sprintf("ERROR: %s - not a number", numStr))
+			result = fmt.Sprintf("ERROR: %s - not a number\n", numStr)
 		}
 
-		if err != nil {
+		if err = bws.Send(result); err != nil {
 			break
 		}
 	}
+	bws.Flush()
 	return
 }
 
@@ -112,25 +125,27 @@ func OnList(ws *websocket.Conn, fields []string) (err error) {
 		_, errFmt1 := fmt.Sscanf(fields[0], "%d", &from)
 		_, errFmt2 := fmt.Sscanf(fields[1], "%d", &to)
 		if errFmt1 != nil || errFmt2 != nil {
-			err = websocket.Message.Send(ws, "ERROR: parsing arg(s) as number(s)")
+			err = ws.WriteMessage(websocket.TextMessage, []byte("ERROR: parsing arg(s) as number(s)"))
 			return
 		}
 		go primelib.ListPrimesBetween(out, from, to)
 	case 1:
 		_, errFmt := fmt.Sscanf(fields[0], "%d", &cnt)
 		if errFmt != nil {
-			err = websocket.Message.Send(ws, "ERROR: parsing arg as number")
+			err = ws.WriteMessage(websocket.TextMessage, []byte("ERROR: parsing arg as number"))
 			return
 		}
 		go primelib.ListPrimes(out, cnt)
 	default:
-		err = websocket.Message.Send(ws, warnArgCount)
+		err = ws.WriteMessage(websocket.TextMessage, []byte(warnArgCount))
 		return
 	}
 
 	bws := &BufferedWebSocket{bufSize: 1024 * 1024, ws: ws} // 1MB buffer
 	for p := range out {
-		err = bws.Send(fmt.Sprintf("%d\n", p))
+		if err == nil {
+			err = bws.Send(fmt.Sprintf("%d\n", p))
+		}
 	}
 	err = bws.Flush()
 	return
@@ -154,12 +169,14 @@ func (bws *BufferedWebSocket) Send(msg string) error {
 		err = bws.Flush()
 	}
 
-	bws.buf = append(bws.buf, msgBytes...)
+	if err == nil {
+		bws.buf = append(bws.buf, msgBytes...)
+	}
 	return err
 }
 
 func (bws *BufferedWebSocket) Flush() error {
-	err := websocket.Message.Send(bws.ws, string(bws.buf))
+	err := bws.ws.WriteMessage(websocket.TextMessage, bws.buf)
 	bws.buf = make([]byte, 0, bws.bufSize)
 	return err
 }
