@@ -130,7 +130,7 @@ func testPrime() {
 }
 
 func getNumber(number *uint64) bool {
-	_, err := fmt.Scanf("%d", number)
+	_, err := fmt.Scanln(number)
 
 	return err == nil
 }
