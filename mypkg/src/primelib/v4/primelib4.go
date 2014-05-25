@@ -33,7 +33,10 @@ details.
 */
 package primelib
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 const maxPrimeCount = 10 * 1000
 
@@ -66,6 +69,16 @@ func makeChanTrio(writeBuffSize uint32) (in, out, diag chan interface{}) {
 	return
 }
 
+func getUint32Val(arg interface{}) (number uint32, e error) {
+	switch arg.(type) {
+	case uint32:
+		number = arg.(uint32)
+	default:
+		e = fmt.Errorf("ERROR: Illegal arg type (%T) - expected uint32", arg)
+	}
+	return
+}
+
 // Lists out the first 'cnt' primes onto the 'out' channel.
 //
 // This method conforms to the Std3io pattern.  It returns valid 'in', 'out'
@@ -75,42 +88,61 @@ func makeChanTrio(writeBuffSize uint32) (in, out, diag chan interface{}) {
 // 'uint32'
 //
 // The caller can abort the concurrent execution by closing the 'in' channel
-func ListPrimes(cnt uint32) (in, out, diag chan interface{}) {
-	in, out, diag = makeChanTrio(1)
-	go func() {
-		defer close(out)
-		defer close(diag)
+func ListPrimes(args ...interface{}) (in, out, diag chan interface{}) {
+	diag = make(chan interface{}, 1)
+	defer close(diag)
 
-		primePrintCnt := uint32(0)
-		number := uint64(arrPrimes[maxPrimeCount-1])
-		stopLimit := number * number
-		if number%2 == 0 {
-			number -= 1
-		}
-		for i := uint32(0); i < cnt && number < stopLimit; i++ {
-			select {
-			case _, isOpen := <-in:
-				if !isOpen {
-					break
-				}
-			default:
-				if i < uint32(maxPrimeCount) {
-					out <- arrPrimes[i]
-					primePrintCnt++
-				} else {
-					for number += 2; number < stopLimit; number += 2 {
-						if isPrime(number) {
-							out <- number
-							primePrintCnt++
-							break
-						}
+	if len(args) != 1 {
+		diag <- fmt.Sprintf("ERROR: Invalid arg count (%d) - expected 1 arg", len(args))
+		return
+	}
+
+	cnt, err := getUint32Val(args[0])
+	if err != nil {
+		diag <- err
+		return
+	}
+
+	in, out, diag = makeChanTrio(10 * 1000) // new diag channel created
+	go listPrimes(cnt, in, out, diag)
+	return
+}
+
+func listPrimes(cnt uint32, in, out, diag chan interface{}) {
+	defer close(out)
+	defer close(diag)
+
+	status := "OK"
+	primePrintCnt := uint32(0)
+	number := uint64(arrPrimes[maxPrimeCount-1])
+	stopLimit := number * number
+	if number%2 == 0 {
+		number -= 1
+	}
+MainLoop:
+	for i := uint32(0); i < cnt && number < stopLimit; i++ {
+		select {
+		case _, isOpen := <-in:
+			if !isOpen {
+				status = "ABORTED"
+				break MainLoop
+			}
+		default:
+			if i < uint32(maxPrimeCount) {
+				out <- arrPrimes[i]
+				primePrintCnt++
+			} else {
+				for number += 2; number < stopLimit; number += 2 {
+					if isPrime(number) {
+						out <- number
+						primePrintCnt++
+						break
 					}
 				}
-			} // select
-		} // for ...
-		diag <- primePrintCnt
-	}() // go func
-	return
+			}
+		} // select
+	} // for ...
+	diag <- fmt.Sprintf("%s: Listed %d primes", status, primePrintCnt)
 }
 
 // List all 32-bit primes between >= 'from' AND <= 'to' onto the returned
@@ -125,44 +157,67 @@ func ListPrimes(cnt uint32) (in, out, diag chan interface{}) {
 //
 // Each prime written onto the 'out' channel is of type uint64 and the count
 // written onto 'diag' is of type uint32
-func ListPrimesBetween(from, to uint32) (in, out, diag chan interface{}) {
-	if to < 2 || from > to {
-		diag = make(chan interface{}, 1)
-		diag <- uint32(0)
-		close(diag)
+func ListPrimesBetween(args ...interface{}) (in, out, diag chan interface{}) {
+	diag = make(chan interface{}, 1)
+	defer close(diag)
+
+	if len(args) != 2 {
+		diag <- fmt.Sprintf("ERROR: Invalid arg count (%d) - expected 2 args", len(args))
 		return
 	}
 
-	in, out, diag = makeChanTrio(1)
-	go func() {
-		defer close(out)
-		defer close(diag)
+	from, err := getUint32Val(args[0])
+	if err != nil {
+		diag <- fmt.Sprintf("%s (arg1)", err.Error())
+		return
+	}
 
-		primePrintCnt := uint32(0)
-		number := uint64(from)
-		if number <= 2 {
-			out <- uint64(2)
-			primePrintCnt++
-			number = 3
-		} else if number%2 == 0 {
-			number++
-		}
-		for ; number <= uint64(to); number++ {
-			select {
-			case _, isOpen := <-in:
-				if !isOpen {
-					break
-				}
-			default:
-				if isPrime(number) {
-					out <- number
-					primePrintCnt++
-				}
+	to, err := getUint32Val(args[1])
+	if err != nil {
+		diag <- fmt.Sprintf("%s (arg2)", err.Error())
+		return
+	}
+
+	if to < 2 || from > to {
+		diag <- fmt.Sprintf("ERROR: Illegal from (%d) / to (%d) values", from, to)
+		return
+	}
+
+	in, out, diag = makeChanTrio(10 * 1000)
+	go listPrimesBetween(from, to, in, out, diag)
+	return
+}
+
+func listPrimesBetween(from, to uint32, in, out, diag chan interface{}) {
+	defer close(out)
+	defer close(diag)
+
+	status := "OK"
+	primePrintCnt := uint32(0)
+	number := uint64(from)
+	if number <= 2 {
+		out <- uint64(2)
+		primePrintCnt++
+		number = 3
+	} else if number%2 == 0 {
+		number++
+	}
+MainLoop:
+	for ; number <= uint64(to); number += 2 {
+		select {
+		case _, isOpen := <-in:
+			if !isOpen {
+				status = "ABORTED"
+				break MainLoop
+			}
+		default:
+			if isPrime(number) {
+				out <- number
+				primePrintCnt++
 			}
 		}
-		diag <- primePrintCnt
-	}()
-	return
+	}
+	diag <- fmt.Sprintf("%s: Listed %d primes", status, primePrintCnt)
 }
 
 // Returns the smallest / first prime factor for the supplied 'number'.
