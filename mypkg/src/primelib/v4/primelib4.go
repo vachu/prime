@@ -40,6 +40,8 @@ import (
 
 const maxPrimeCount = 10 * 1000
 
+type myChan chan interface{}
+
 var arrPrimes [maxPrimeCount]uint32
 
 func init() {
@@ -69,16 +71,6 @@ func makeChanTrio(writeBuffSize uint32) (in, out, diag chan interface{}) {
 	return
 }
 
-func getUint32Val(arg interface{}) (number uint32, e error) {
-	switch arg.(type) {
-	case uint32:
-		number = arg.(uint32)
-	default:
-		e = fmt.Errorf("ERROR: Illegal arg type (%T) - expected uint32", arg)
-	}
-	return
-}
-
 // Lists out the first 'cnt' primes onto the 'out' channel.
 //
 // This method conforms to the Std3io pattern.  It returns valid 'in', 'out'
@@ -88,27 +80,13 @@ func getUint32Val(arg interface{}) (number uint32, e error) {
 // 'uint32'
 //
 // The caller can abort the concurrent execution by closing the 'in' channel
-func ListPrimes(args ...interface{}) (in, out, diag chan interface{}) {
-	diag = make(chan interface{}, 1)
-	defer close(diag)
-
-	if len(args) != 1 {
-		diag <- fmt.Sprintf("ERROR: Invalid arg count (%d) - expected 1 arg", len(args))
-		return
-	}
-
-	cnt, err := getUint32Val(args[0])
-	if err != nil {
-		diag <- err
-		return
-	}
-
+func ListPrimes(cnt uint32) (in, out, diag myChan) {
 	in, out, diag = makeChanTrio(10 * 1000) // new diag channel created
 	go listPrimes(cnt, in, out, diag)
 	return
 }
 
-func listPrimes(cnt uint32, in, out, diag chan interface{}) {
+func listPrimes(cnt uint32, in, out, diag myChan) {
 	defer close(out)
 	defer close(diag)
 
@@ -157,26 +135,9 @@ MainLoop:
 //
 // Each prime written onto the 'out' channel is of type uint64 and the count
 // written onto 'diag' is of type uint32
-func ListPrimesBetween(args ...interface{}) (in, out, diag chan interface{}) {
+func ListPrimesBetween(from, to uint32) (in, out, diag chan interface{}) {
 	diag = make(chan interface{}, 1)
 	defer close(diag)
-
-	if len(args) != 2 {
-		diag <- fmt.Sprintf("ERROR: Invalid arg count (%d) - expected 2 args", len(args))
-		return
-	}
-
-	from, err := getUint32Val(args[0])
-	if err != nil {
-		diag <- fmt.Sprintf("%s (arg1)", err.Error())
-		return
-	}
-
-	to, err := getUint32Val(args[1])
-	if err != nil {
-		diag <- fmt.Sprintf("%s (arg2)", err.Error())
-		return
-	}
 
 	if to < 2 || from > to {
 		diag <- fmt.Sprintf("ERROR: Illegal from (%d) / to (%d) values", from, to)

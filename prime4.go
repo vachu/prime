@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	in, out, diag := primelib.ListPrimesBetween(uint32(10), uint32(30))
+	//cmdLine := "?"
+	//cmdLine := "ListPrimesBetween 0 20"
+	cmdLine := "ListPrimes 100"
+	in, out, diag := primelib.DoCmd(cmdLine)
 
 	ctr, breakout := 0, 0
 	if out != nil {
