@@ -40,8 +40,6 @@ import (
 
 const maxPrimeCount = 10 * 1000
 
-type myChan chan interface{}
-
 var arrPrimes [maxPrimeCount]uint32
 
 func init() {
@@ -80,13 +78,13 @@ func makeChanTrio(writeBuffSize uint32) (in, out, diag chan interface{}) {
 // 'uint32'
 //
 // The caller can abort the concurrent execution by closing the 'in' channel
-func ListPrimes(cnt uint32) (in, out, diag myChan) {
+func ListPrimes(cnt uint32) (in, out, diag chan interface{}) {
 	in, out, diag = makeChanTrio(10 * 1000) // new diag channel created
 	go listPrimes(cnt, in, out, diag)
 	return
 }
 
-func listPrimes(cnt uint32, in, out, diag myChan) {
+func listPrimes(cnt uint32, in, out, diag chan interface{}) {
 	defer close(out)
 	defer close(diag)
 

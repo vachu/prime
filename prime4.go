@@ -1,47 +1,43 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"primelib/v4"
+	"strings"
 )
 
 func main() {
-	//cmdLine := "?"
-	//cmdLine := "ListPrimesBetween 0 20"
-	cmdLine := "ListPrimes 100"
-	in, out, diag := primelib.DoCmd(cmdLine)
+	if len(os.Args) > 1 {
+		for _, arg := range os.Args[1:] {
+			processCmdline(arg)
+		}
+	} else {
+		for cmdLine := getLine(); len(cmdLine) > 0; cmdLine = getLine() {
+			processCmdline(cmdLine)
+		}
+	}
 
-	ctr, breakout := 0, 0
+}
+
+func getLine() string {
+	fmt.Print("Enter command: ")
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	line = strings.Trim(line, " \t\v\f\r\n")
+	line = strings.ToLower(line)
+	return line
+}
+
+func processCmdline(cmdLine string) {
+	_, out, diag := primelib.DoCmd(cmdLine)
 	if out != nil {
 		for output := range out {
 			fmt.Println(output)
-			ctr++
-			if ctr == breakout {
-				fmt.Println("DEBUG: encountered BREAKOUT -- ctr =", ctr)
-				close(in)
-				break
-			}
 		}
-		fmt.Println("DEBUG: ctr =", ctr)
-		<-drain(out)
 	}
-	fmt.Fprintln(os.Stderr, <-diag)
-}
-
-func drain(ch chan interface{}) (done chan interface{}) {
-	done = make(chan interface{})
-	go func() {
-		defer close(done)
-
-		ctr := 0
-		if ch != nil {
-			for data := range ch {
-				_ = data
-				ctr++
-			}
-		}
-		fmt.Println("DEBUG: from go func() - drain count =", ctr)
-	}()
-	return
+	for diagOutput := range diag {
+		fmt.Fprintln(os.Stderr, diagOutput)
+	}
 }

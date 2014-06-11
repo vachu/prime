@@ -6,22 +6,29 @@ import (
 	"strings"
 )
 
-const helpMsg = `Available Commands (case-sensitive):
+const helpMsg = `
+list <n>:
+    list out the first 'n' primes; n > 0 && < 2^32 - 1
 
-ListPrimes n: list out the first 'n' primes; n > 0 && < 2^32 - 1
+list_between <m> <n>:
+    list out all the primes between the numbers 'm' and 'n'
+    where 'm' <= 'n' and ('m', 'n') > 0 && < 2^32 - 1
 
-ListPrimesBetween m n: list out all the primes between the numbers 'm' and 'n'
-          where 'm' <= 'n' and ('m', 'n') > 0 && < 2^32 - 1
+test <n1> [<n2> ...]:
+    test each of <n1>, <n2> ... for primality and print
+    human-readable results
 `
 
+type myChan chan interface{}
 type myFunc func([]string) (myChan, myChan, myChan)
 
 var cmd2FuncMap map[string]myFunc
 
 func init() {
 	cmd2FuncMap = make(map[string]myFunc)
-	cmd2FuncMap["ListPrimes"] = doListPrimes
-	cmd2FuncMap["ListPrimesBetween"] = doListPrimesBetween
+	cmd2FuncMap["list"] = doListPrimes
+	cmd2FuncMap["list_between"] = doListPrimesBetween
+	cmd2FuncMap["test"] = doTest
 	cmd2FuncMap["?"] = doPrintHelp
 }
 
@@ -90,6 +97,43 @@ func doListPrimesBetween(args []string) (in, out, diag myChan) {
 	}
 
 	in, out, diag = ListPrimesBetween(from, to)
+	return
+}
+
+func doTest(args []string) (in, out, diag myChan) {
+	diag = make(chan interface{}, 1)
+	defer close(diag)
+
+	if len(args) == 0 {
+		diag <- "ERROR: nothing to test"
+		return
+	}
+
+	in, out, diag = makeChanTrio(10 * 1024)
+	go func() {
+		defer close(out)
+		defer close(diag)
+
+		for _, arg := range args {
+			var num uint64
+			_, errFmt := fmt.Sscanf(arg, "%d", &num)
+			if errFmt == nil {
+				result := fmt.Sprintf("%d: ", num)
+				primeFactor := GetFirstPrimeFactor(num)
+				switch {
+				case primeFactor == 0:
+					result += "cannot test reliably"
+				case primeFactor == num:
+					result += "PRIME"
+				default:
+					result += fmt.Sprintf("divisible by %d", primeFactor)
+				}
+				out <- result
+			} else {
+				out <- fmt.Sprintf("ERROR: %s - not a uint32 number", arg)
+			}
+		}
+	}()
 	return
 }
 
